@@ -327,7 +327,10 @@ public class JsonEditerUI extends javax.swing.JFrame {
 	}
 
 	private void jMenuItem5MousePressed(java.awt.event.MouseEvent evt) {
-		JsonPraser.parseJson("E:/", "mapData.config", visitAllNodes(jTree1));
+		Map<DataType,List<DataType>> mp = visitAllNodes(jTree1);
+		DefaultMutableTreeNode root = (DefaultMutableTreeNode) jTree1.getModel().getRoot();
+		DataType d = mp.get((DataType)root.getUserObject()).get(0);
+		JsonPraser.parseJson("E:/", "mapData.config",d);
 	}
 
 	private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {
