@@ -64,5 +64,10 @@ public class DataType {
 		this.structType = structType;
 		this.datas = datas;
 	}
+
+	@Override
+	public String toString() {
+		return "{" + this.name  + " : value}";
+	}
 	
 }
