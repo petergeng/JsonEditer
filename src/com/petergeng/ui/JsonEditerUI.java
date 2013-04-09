@@ -347,7 +347,6 @@ public class JsonEditerUI extends javax.swing.JFrame {
 				return;
 			}
 		}
-		System.out.println("111111111");
 		jTree1.startEditingAtPath(jTree1.getSelectionPath());
 		jTree1.repaint();
 	}
