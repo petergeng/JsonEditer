@@ -14,11 +14,26 @@ public class DataType {
 	public DataType(){
 		
 	}
+	
+	public DataType(String name){
+		this.name = name;
+	}
 
 	public String getComm() {
 		return comm;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((comm == null) ? 0 : comm.hashCode());
+		result = prime * result + ((datas == null) ? 0 : datas.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + structType;
+		result = prime * result + type;
+		return result;
+	}
 	public void setComm(String comm) {
 		this.comm = comm;
 	}
@@ -67,6 +82,9 @@ public class DataType {
 
 	@Override
 	public String toString() {
+		if("root".equals(this.name)){
+			return "({})";
+		}
 		return "{" + this.name  + " : value}";
 	}
 	

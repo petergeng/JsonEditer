@@ -4,21 +4,24 @@
  */
 package com.petergeng.ui;
 
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import com.petergeng.data.DataType;
 import com.petergeng.logic.JsonPraser;
+import com.petergeng.util.Util;
 
 /**
  * 
@@ -34,7 +37,7 @@ public class JsonEditerUI extends javax.swing.JFrame {
 	}
 
 	private JTree initJTree(JTree tree) {
-		Object[] hierarchy = { new DataType() };
+		Object[] hierarchy = { new DataType("root") };
 		DefaultMutableTreeNode root = processHierarchy(hierarchy);
 		tree = new JTree(root);
 		return tree;
@@ -53,15 +56,41 @@ public class JsonEditerUI extends javax.swing.JFrame {
 		}
 		return (node);
 	}
-
-	public static Map<DataType,List<DataType>> visitAllNodes(JTree tree) {
-		Map<DataType,List<DataType>> treeNodeMap = new HashMap<DataType,List<DataType>>();
-		TreeNode root = (TreeNode) tree.getModel().getRoot();
-		visitAllNodes(tree, root,treeNodeMap);
-		return treeNodeMap;
+	
+	private DefaultMutableTreeNode getJTreeRoot(){
+		return (DefaultMutableTreeNode) jTree1.getModel().getRoot();
+	}
+	
+	private void buildTreeByData(DataType dataType) {
+		TreeModel treeModel = jTree1.getModel();
+		DefaultMutableTreeNode root = (DefaultMutableTreeNode)this.getJTreeRoot();
+		root.removeAllChildren();
+		((DefaultTreeModel) treeModel).reload();
+		for(DataType node : dataType.getDatas()){
+			processByDataType(node,root,treeModel);
+		}
+		jTree1.setModel(treeModel);
+		jTree1.repaint();
+	
+	}
+	
+	private void processByDataType(DataType d, TreeNode parent, TreeModel treeModel){
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode(d);
+		((DefaultTreeModel) treeModel).insertNodeInto(node,(MutableTreeNode) parent,parent.getChildCount());
+		for(DataType ds : d.getDatas()){
+			processByDataType(ds,node,treeModel);
+		}
 	}
 
-	public static void visitAllNodes(JTree tree, TreeNode node,Map<DataType,List<DataType>> treeNodeMap) {
+	public static Set<DataType> visitAllNodes(JTree tree) {
+		Set<DataType> treeNodeSet = new HashSet<DataType>();
+		DefaultMutableTreeNode root = (DefaultMutableTreeNode) tree.getModel().getRoot();
+		root.setUserObject(new DataType("root"));
+		visitAllNodes(tree, root,treeNodeSet);
+		return treeNodeSet;
+	}
+
+	public static void visitAllNodes(JTree tree, TreeNode node,Set<DataType> treeNodeSet) {
 		// node is visited exactly once
 		// you can do your things about this node,such as:
 		tree.makeVisible(new TreePath(((DefaultTreeModel) tree.getModel())
@@ -70,8 +99,8 @@ public class JsonEditerUI extends javax.swing.JFrame {
 		if (node.getChildCount() >= 0) {
 			for (Enumeration e = node.children(); e.hasMoreElements();) {
 				TreeNode n = (TreeNode) e.nextElement();
-				visitAllNodes(tree, n,treeNodeMap);
-				treeToMap(n,treeNodeMap);
+				visitAllNodes(tree, n,treeNodeSet);
+				treeToData(n,treeNodeSet);
 			}
 		}		
 	}
@@ -87,19 +116,13 @@ public class JsonEditerUI extends javax.swing.JFrame {
 		}
 	}
 	
-	public static void treeToMap(TreeNode node,Map<DataType,List<DataType>> treeNodeMap) {
-		TreeNode parent = node.getParent();
-		DataType pd = (DataType) ((DefaultMutableTreeNode)parent).getUserObject();
-		List<DataType> list = treeNodeMap.get(pd);
-		DataType d = (DataType) ((DefaultMutableTreeNode)node).getUserObject();
-		if(null == list || list.size() == 0){
-			list = new ArrayList<DataType>();
-			list.add(d);
-			treeNodeMap.put(pd, list);
-			pd.getDatas().add(d);
-		}else{
-			list.add(d);
-			pd.getDatas().add(d);
+	public static void treeToData(TreeNode node,Set<DataType> treeNodeSet) {
+		DefaultMutableTreeNode parent = (DefaultMutableTreeNode)node.getParent();
+		DataType parentData = (DataType)parent.getUserObject();
+		DataType currentData = (DataType) ((DefaultMutableTreeNode)node).getUserObject();
+		parentData.getDatas().add(currentData);
+		if(!treeNodeSet.contains(parentData)){
+			treeNodeSet.add(parentData);
 		}
 	}
 
@@ -290,7 +313,7 @@ public class JsonEditerUI extends javax.swing.JFrame {
 		} else if (evt.getSource() == jMenuItem3) {
 			if (node.isRoot()) {
 				return;
-			}
+			}			
 		}
 		jTree1.repaint();
 	}
@@ -322,14 +345,18 @@ public class JsonEditerUI extends javax.swing.JFrame {
 				return;
 			}
 		}
+		DefaultMutableTreeNode parent = (DefaultMutableTreeNode)node.getParent();
+		DataType parentData = (DataType)parent.getUserObject();
+		DataType nodeData = (DataType)node.getUserObject();
+		parentData.getDatas().remove(nodeData);
 		((DefaultTreeModel) jTree1.getModel()).removeNodeFromParent(node);
 		jTree1.repaint();
 	}
 
 	private void jMenuItem5MousePressed(java.awt.event.MouseEvent evt) {
-		Map<DataType,List<DataType>> mp = visitAllNodes(jTree1);
+		visitAllNodes(jTree1);
 		DefaultMutableTreeNode root = (DefaultMutableTreeNode) jTree1.getModel().getRoot();
-		DataType d = mp.get((DataType)root.getUserObject()).get(0);
+		DataType d = (DataType)root.getUserObject();
 		JsonPraser.parseJson("E:/", "mapData.config",d);
 	}
 
@@ -340,7 +367,9 @@ public class JsonEditerUI extends javax.swing.JFrame {
 	private void jMenuItem3MousePressed(java.awt.event.MouseEvent evt) {
 		DefaultMutableTreeNode node = (DefaultMutableTreeNode) jTree1
 				.getLastSelectedPathComponent(); // 获得右键选中的节点
-		JOptionPane.showMessageDialog(jTree1, "Printing complete");
+		DataType d = Util.jsonToObject("{'comm':'','datas':[{'comm':'','datas':[],'name':'test','structType':0,'type':0}],'name':'root','structType':0,'type':0}");
+		buildTreeByData(d);
+		System.out.println("-----------------------");
 		System.out.println("111111111");
 		if (evt.getSource() == jMenuItem3) {
 			if (node.isRoot()) {
