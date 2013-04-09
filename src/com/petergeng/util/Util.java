@@ -18,7 +18,6 @@ public class Util {
 	public static String cgiEnd = ")";
 	public static String configPrix = ".config";
 	public static String dataPrix = ".htm";
-	private static StringBuffer sb=new StringBuffer();
 	public static String getLineSeparator(){
 		String desktop = System.getProperty("sun.desktop");
 		if("windows".equals(desktop)){
@@ -28,6 +27,7 @@ public class Util {
 	}
 	
 	public static String readFile(String path){
+		StringBuffer sb=new StringBuffer();
 		try{
 		  File file=new File(path);
 		  if(!file.exists()){
